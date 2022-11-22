@@ -1,0 +1,26 @@
+INPUT: (Flattened) = (1 x 784)
+
+FC1: (784 x 1) x (8 x 784) = (1 x 8)
+
+Sigmoid: (1 x 8) = (1 x 8)
+
+FC2: (8 x 1) x (10 x 8) = (1 x 10)
+
+Softmax: (1 x 10) = (1 x 10)
+
+OUTPUT: (1 x 10)
+
+
+SQUARED:
+
+INPUT: (Flattened) = (784 x 784)
+
+FC1: (784 x 784) x (8 x 784) = (784 x 8) -> 	[1 x 8]
+
+Sigmoid: (1 x 8) = (1 x 8)
+
+FC2: (8 x 1) x (10 x 8) = (1 x 10)
+
+Softmax: (1 x 10) = (1 x 10)
+
+OUTPUT: (1 x 10)
