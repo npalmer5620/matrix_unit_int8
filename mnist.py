@@ -1,4 +1,6 @@
 import numpy as np
+import time
+import pathlib
 import tensorflow as tf
 from numpy.random import default_rng
 import matplotlib.pyplot as plt
@@ -10,67 +12,40 @@ from keras.datasets import mnist
 import tensorflow_model_optimization as tfmot
 import tensorflow as tf
 
-# Load MNIST handwritten digit data
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
+# Load MNIST dataset
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-print(X_train.shape)
-print(X_test.shape)
-
-print(y_train.shape)
-print(y_test.shape)
-
-# Display some images
-fig, axes = plt.subplots(ncols=5, sharex=False, sharey=True, figsize=(10, 4))
-
-for i in range(1):
-    axes[i].set_title(y_train[i])
-    axes[i].imshow(X_train[i], cmap='gray')
-    axes[i].get_xaxis().set_visible(False)
-    axes[i].get_yaxis().set_visible(False)
-
-# np.save('test_img.npy', X_train[0].flatten())
-
-# plt.show()
-
- 
-# Convert y_train into one-hot format
-temp = []
-for i in range(len(y_train)):
-    temp.append(to_categorical(y_train[i], num_classes=10))
-
-y_train = np.array(temp)
-
-# Convert y_test into one-hot format
-temp = []
-for i in range(len(y_test)):    
-    temp.append(to_categorical(y_test[i], num_classes=10))
-
-y_test = np.array(temp)
+# Normalize the input image so that each pixel value is between 0 to 1.
+train_images = train_images / 255.0
+test_images = test_images / 255.0
 
 # Create simple Neural Network model
 model = Sequential()
-model.add(Flatten(input_shape=(28,28)))
+model.add(Flatten(input_shape=(28, 28)))
 # model.add(Normalization(axis=1))
 # model.add(Resizing(8, 8, interpolation="bilinear", crop_to_aspect_ratio=False))
-# model.add(Dense(8, activation='sigmoid', use_bias=False)) 
-model.add(Dense(8, activation='sigmoid', use_bias=False)) 
-model.add(Dense(10, activation='softmax', use_bias=False)) # 10 classes so 10 output layers
+# model.add(Dense(8, activation='sigmoid', use_bias=False))
+# model.add(Dense(8, activation='sigmoid', use_bias=False))
+model.add(Dense(10, activation='softmax', use_bias=False))
 model.summary()
-print("Done")
 
-model.compile(loss='categorical_crossentropy', 
-              optimizer='adam',
-              metrics=['acc'])
+# Train the digit classification model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
 
-print("x test shape", X_test.shape)
-print(X_test[0])
-print("y test shape", y_test.shape)
-print(y_test[0])
+model.fit(
+    train_images,
+    train_labels,
+    epochs=10,
+    validation_data=(test_images, test_labels)
+)
 
-model.fit(X_train, y_train, epochs=8, batch_size=64, 
-          validation_data=(X_test,y_test))
+score = model.evaluate(test_images, test_labels)
+print("Test loss {:.4f}, accuracy {:.2f}%".format(score[0], score[1] * 100))
+time.sleep(5)
 
-
+'''
 weights = model.get_weights()
 
 for layer in model.layers:
@@ -87,7 +62,6 @@ for layer in model.layers:
     print("-------------------------------------------------------------")
 
 
-
 predictions = model.predict(X_test)
 predictions = np.argmax(predictions, axis=1)
 fig, axes = plt.subplots(ncols=10, sharex=False, sharey=True, figsize=(20, 4))
@@ -98,8 +72,8 @@ for i in range(10):
     axes[i].get_xaxis().set_visible(False)
     axes[i].get_yaxis().set_visible(False)
 
+plt.show()
 
-#plt.show()
 
 for layer in model.layers:
     weights = layer.get_weights() # list of numpy arrays
@@ -108,8 +82,9 @@ for layer in model.layers:
         print(weight_dim)
         print()
     print("-------------------------------------------------------------")
+'''
 
-
+'''
 quantize_model = tfmot.quantization.keras.quantize_model
 
 # q_aware stands for for quantization aware.
@@ -117,16 +92,14 @@ q_aware_model = quantize_model(model)
 
 # `quantize_model` requires a recompile.
 q_aware_model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['accuracy'])
 
 q_aware_model.summary()
+'''
 
-converter = tf.lite.TFLiteConverter.from_keras_model(q_aware_model)
-
-image_shape = (28, 28, 1)
-
-X_test = X_test[0:99]
+# converter = tf.lite.TFLiteConverter.from_keras_model(q_aware_model)
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
 mnist_train, _ = tf.keras.datasets.mnist.load_data()
 images = tf.cast(mnist_train[0], tf.float32) / 255.0
@@ -136,15 +109,31 @@ def representative_data_gen():
   for input_value in mnist_ds.take(100):
     yield [input_value]
 
+converter.representative_dataset = representative_data_gen
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+converter.inference_input_type = tf.int8
+converter.inference_output_type = tf.int8
+
+'''
 converter.optimizations = [tf.lite.Optimize.DEFAULT]
 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
 converter.representative_dataset = representative_data_gen
 converter.inference_input_type = tf.uint8
 converter.inference_output_type = tf.uint8
 converter.exclude_conversion_metadata = False
+'''
 
-quantized_tflite_model = converter.convert()
+tflite_model_quant = converter.convert()
 
+tflite_models_dir = pathlib.Path.cwd()
+# tflite_models_dir.mkdir(exist_ok=True, parents=True)
+tflite_model_quant_file = tflite_models_dir/"new_model.tflite"
+tflite_model_quant_file.write_bytes(tflite_model_quant)
+
+
+
+"""
 interpreter = tf.lite.Interpreter(model_content=quantized_tflite_model)
 signatures = interpreter.get_signature_list()
 print("signatures:")
@@ -160,7 +149,7 @@ print('input: ', input_type)
 output_type = interpreter.get_output_details()[0]['dtype']
 print('output: ', output_type)
 
-"""
+
 for layer in quantized_tflite_model.layers:
     weights = layer.get_weights() # list of numpy arrays
 
@@ -174,4 +163,5 @@ for layer in quantized_tflite_model.layers:
         print()
 
     print("-------------------------------------------------------------")
+
 """
