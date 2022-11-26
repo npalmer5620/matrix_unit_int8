@@ -62,6 +62,6 @@ _ = plt.title(template.format(true= str(test_labels[N]),
                               predict=str(np.argmax(predictions[0])),
                               prob=str((predictions[0][predictions.argmax(axis=1)[0]] / 255.0) * 100.0) + "%"))
 plt.grid(False)
-plt.show()
+# plt.show()
 
 

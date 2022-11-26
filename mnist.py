@@ -12,12 +12,16 @@ from keras.datasets import mnist
 import tensorflow_model_optimization as tfmot
 import tensorflow as tf
 
+# https://notebook.community/jhseu/tensorflow/tensorflow/lite/g3doc/performance/post_training_integer_quant
 # Load MNIST dataset
 (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-# Normalize the input image so that each pixel value is between 0 to 1.
-train_images = train_images / 255.0
-test_images = test_images / 255.0
+# Normalize the input image so that each pixel value is between 0 to 1. (255 beforehand)
+# v1 255.0
+# v2 1.0
+# v3 1.0 then -128.0
+train_images = (train_images / 1.0) - 128.0
+test_images = (test_images / 1.0) - 128.0
 
 # Create simple Neural Network model
 model = Sequential()
@@ -102,7 +106,11 @@ q_aware_model.summary()
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
 mnist_train, _ = tf.keras.datasets.mnist.load_data()
-images = tf.cast(mnist_train[0], tf.float32) / 255.0
+# images = tf.cast(mnist_train[0], tf.float32) / 255.0 # v1
+# images = tf.cast(mnist_train[0], tf.float32) / 1.0 # v2
+# images = (tf.cast(mnist_train[0], tf.float32) / 1.0) - 128.0 # v3
+
+images = (tf.cast(mnist_train[0], tf.float32) / 1.0) -128.0
 mnist_ds = tf.data.Dataset.from_tensor_slices((images)).batch(1)
 
 def representative_data_gen():
