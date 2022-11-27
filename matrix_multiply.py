@@ -54,8 +54,8 @@ if __name__ == "__main__":
     # Load Test Dataset
     (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
     
+    # Vectorize (flatten) the image and convert to unsigned values to signed
     N = 2
-    # Vectorize (flatten) the image and convert to unsigned values to signed 
     img_vector = test_images[N].flatten()
     img_vector = img_vector.astype(np.float64) - 128.0
     img_vector = img_vector.astype(np.int8)
