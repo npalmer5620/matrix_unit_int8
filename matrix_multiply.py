@@ -2,6 +2,7 @@ import numpy as np
 from keras.datasets import mnist
 import sys
 from math import exp
+
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -19,16 +20,6 @@ def softmax_stable(x):
     print()
     return f / f.sum(axis=0)
 
-def exp_approx(x):
-    # Assume input is integers between -128 and 127
-    b0 = x + 1
-    b1 = x * x
-
-    b2 = (b1 * x) >> 3
-    b1 = b1 >> 1
-
-    return b0 + b1 + b2
-
 def softmax(x):
     print("----- SOFTMAX -----")
     print("Input: ", x)
@@ -37,15 +28,6 @@ def softmax(x):
     print("Output: ", x)
     print("-------------------")
     return x
-
-# https://stackoverflow.com/questions/10871220/making-a-matrix-square-and-padding-it-with-desired-value-in-numpy
-def squarify(M,val):
-    (a,b)=M.shape
-    if a>b:
-        padding=((0,0),(0,a-b))
-    else:
-        padding=((0,b-a),(0,0))
-    return np.pad(M,padding,mode='constant',constant_values=val)
 
 def recursive_mm(A:np.ndarray, B:np.ndarray):
     print(A)
