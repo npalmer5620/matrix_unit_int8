@@ -1,4 +1,4 @@
-# 8x8 Systolic Matrix Multiplier
+# 8x8 int8 Systolic Matrix Multiplier
 This project implements a weight-stationary systolic array matrix multiplier in SystemVerilog, hopefully one that can interface with my upcoming RISC-V CPU core project. And eventually run a forward pass of a simple fully-connected network on an image from the MNIST data set.
 
 There are a several Verilog files that have been compiled and simulated with Xilinx Vivado, half these boilerplate/workspace config files have been eliminated but some may be essential to reproduce this, I guess we will find out later! All sources are located in, <code>/mpu_project.srcs/</code>. Some of them are described lower in the README.
